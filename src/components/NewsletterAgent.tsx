@@ -68,7 +68,6 @@ export function NewsletterAgent({ apiKey }: Props) {
     topic: NEWSLETTER_TOPICS[0],
     focus: '',
     email: localStorage.getItem('newsletter-email') ?? '',
-    togetherApiKey: '',
   });
   const [newsletterContent, setNewsletterContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -81,8 +80,6 @@ export function NewsletterAgent({ apiKey }: Props) {
     const next = { ...config, ...updates };
     setConfig(next);
     if (updates.email !== undefined) localStorage.setItem('newsletter-email', updates.email);
-    if (updates.togetherApiKey !== undefined)
-      localStorage.setItem('together-api-key', updates.togetherApiKey);
   }
 
   async function generateNewsletter() {
@@ -354,7 +351,7 @@ export function NewsletterAgent({ apiKey }: Props) {
               {step === 'generating-image' ? (
                 <span className="nl-loading">
                   <span className="nl-spinner" />
-                  {config.togetherApiKey ? 'מייצר תמונה עם FLUX AI...' : 'בונה prompt לתמונה...'}
+                  מייצר תמונה...
                 </span>
               ) : (
                 '✅ אישרתי – צור תמונה'
@@ -408,7 +405,7 @@ export function NewsletterAgent({ apiKey }: Props) {
                   </button>
                 </div>
                 <p className="nl-tip">
-                  💡 הוסף מפתח Together AI בהגדרות לקבלת תמונה אוטומטית בפעם הבאה
+                  💡 העתק את הפרומפט ל-Midjourney, DALL-E או Canva ליצירת תמונה
                 </p>
               </div>
             )}

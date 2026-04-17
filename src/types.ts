@@ -48,7 +48,6 @@ export interface NewsletterConfig {
   topic: string;
   focus: string;
   email: string;
-  togetherApiKey: string;
 }
 
 export const NEWSLETTER_TOPICS = [
