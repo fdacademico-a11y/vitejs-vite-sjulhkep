@@ -15,10 +15,16 @@ function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropic-api-key') ?? '');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiSetup, setShowApiSetup] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const refreshCourses = useCallback(() => {
     setCourses(store.getCourses());
   }, []);
+
+  function navigate(v: View) {
+    setView(v);
+    setMobileMenuOpen(false);
+  }
 
   function saveApiKey() {
     localStorage.setItem('anthropic-api-key', apiKeyInput);
@@ -33,6 +39,7 @@ function App() {
       setShowApiSetup(true);
     } else {
       setShowAI((v) => !v);
+      setMobileMenuOpen(false);
     }
   }
 
@@ -52,7 +59,26 @@ function App() {
 
   return (
     <div className="app-layout" dir="rtl">
-      <nav className="sidebar">
+
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <div className="mobile-logo">🎓 האקדמיה</div>
+        <button
+          className="hamburger"
+          onClick={() => setMobileMenuOpen((v) => !v)}
+          aria-label="תפריט"
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </div>
+
+      {/* Overlay for mobile menu */}
+      {mobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <nav className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="sidebar-logo">
           <span className="logo-icon">🎓</span>
           <span className="logo-text">האקדמיה</span>
@@ -61,7 +87,7 @@ function App() {
         <div className="sidebar-nav">
           <button
             className={`nav-item ${view.type === 'dashboard' ? 'active' : ''}`}
-            onClick={() => { setView({ type: 'dashboard' }); refreshCourses(); }}
+            onClick={() => { navigate({ type: 'dashboard' }); refreshCourses(); }}
           >
             <span className="nav-icon">🏠</span>
             <span>לוח בקרה</span>
@@ -69,7 +95,7 @@ function App() {
 
           <button
             className="nav-item"
-            onClick={() => setView({ type: 'courseEditor' })}
+            onClick={() => navigate({ type: 'courseEditor' })}
           >
             <span className="nav-icon">➕</span>
             <span>קורס חדש</span>
@@ -77,7 +103,7 @@ function App() {
 
           <button
             className={`nav-item ${view.type === 'newsletter' ? 'active' : ''}`}
-            onClick={() => setView({ type: 'newsletter' })}
+            onClick={() => navigate({ type: 'newsletter' })}
           >
             <span className="nav-icon">📰</span>
             <span>ניוזלטר AI</span>
@@ -93,18 +119,19 @@ function App() {
         </div>
 
         <div className="sidebar-footer">
-          <button className="nav-item-small" onClick={() => setShowApiSetup(true)}>
+          <button className="nav-item-small" onClick={() => { setShowApiSetup(true); setMobileMenuOpen(false); }}>
             ⚙️ הגדרות API
           </button>
         </div>
       </nav>
 
+      {/* Main content */}
       <main className="main-content">
         {view.type === 'dashboard' && (
           <Dashboard
             courses={courses}
-            onNewCourse={() => setView({ type: 'courseEditor' })}
-            onEditCourse={(id) => setView({ type: 'courseEditor', courseId: id })}
+            onNewCourse={() => navigate({ type: 'courseEditor' })}
+            onEditCourse={(id) => navigate({ type: 'courseEditor', courseId: id })}
             onDeleteCourse={(id) => { store.deleteCourse(id); refreshCourses(); }}
           />
         )}
@@ -116,7 +143,7 @@ function App() {
               refreshCourses();
               setView({ type: 'courseEditor', courseId: course.id });
             }}
-            onBack={() => { setView({ type: 'dashboard' }); refreshCourses(); }}
+            onBack={() => { navigate({ type: 'dashboard' }); refreshCourses(); }}
             onEditLesson={(courseId, lessonId) =>
               setView({ type: 'lessonEditor', courseId, lessonId })
             }
@@ -140,6 +167,7 @@ function App() {
         )}
       </main>
 
+      {/* AI panel */}
       {showAI && apiKey && (
         <aside className="ai-panel">
           <div className="ai-panel-header">
@@ -150,6 +178,7 @@ function App() {
         </aside>
       )}
 
+      {/* API setup modal */}
       {showApiSetup && (
         <div className="modal-overlay" onClick={() => setShowApiSetup(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
