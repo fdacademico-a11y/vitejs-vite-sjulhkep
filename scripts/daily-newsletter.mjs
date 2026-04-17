@@ -93,29 +93,15 @@ Return ONLY the image prompt in English, 2-3 sentences.`,
 }
 
 async function generateImage(prompt) {
-  const response = await fetch('https://api.together.xyz/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'black-forest-labs/FLUX.1-schnell-Free',
-      prompt,
-      n: 1,
-      width: 1024,
-      height: 1024,
-      steps: 4,
-    }),
-  });
+  // Pollinations.ai — free, no API key needed
+  const encoded = encodeURIComponent(prompt);
+  const seed = Math.floor(Math.random() * 999999);
+  const url = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${seed}`;
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Together AI: ${err}`);
-  }
-
-  const data = await response.json();
-  return data?.data?.[0]?.url ?? null;
+  // Verify the image is reachable
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Pollinations.ai error: ${response.status}`);
+  return url;
 }
 
 async function fetchImageBase64(url) {
@@ -205,14 +191,12 @@ async function main() {
   console.log('Prompt:', imagePrompt);
 
   let imageUrl = null;
-  if (process.env.TOGETHER_API_KEY) {
-    console.log('🖼️  Generating image...');
-    try {
-      imageUrl = await generateImage(imagePrompt);
-      console.log('✅ Image:', imageUrl);
-    } catch (e) {
-      console.warn('⚠️  Image skipped:', e.message);
-    }
+  console.log('🖼️  Generating image (Pollinations.ai)...');
+  try {
+    imageUrl = await generateImage(imagePrompt);
+    console.log('✅ Image:', imageUrl);
+  } catch (e) {
+    console.warn('⚠️  Image skipped:', e.message);
   }
 
   console.log('📧 Sending email...');

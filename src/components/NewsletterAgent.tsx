@@ -68,7 +68,7 @@ export function NewsletterAgent({ apiKey }: Props) {
     topic: NEWSLETTER_TOPICS[0],
     focus: '',
     email: localStorage.getItem('newsletter-email') ?? '',
-    togetherApiKey: localStorage.getItem('together-api-key') ?? '',
+    togetherApiKey: '',
   });
   const [newsletterContent, setNewsletterContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -145,39 +145,11 @@ export function NewsletterAgent({ apiKey }: Props) {
 
       setImagePromptText(imgPrompt);
 
-      // Step 2: Generate image with Together AI
-      if (!config.togetherApiKey) {
-        // No Together API key – show prompt for external use
-        setStep('done');
-        return;
-      }
-
-      const imgResponse = await fetch('https://api.together.xyz/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${config.togetherApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'black-forest-labs/FLUX.1-schnell-Free',
-          prompt: imgPrompt,
-          n: 1,
-          width: 1024,
-          height: 1024,
-          steps: 4,
-        }),
-      });
-
-      if (!imgResponse.ok) {
-        const errText = await imgResponse.text();
-        throw new Error(`Together AI: ${errText}`);
-      }
-
-      const imgData = await imgResponse.json();
-      const url = imgData?.data?.[0]?.url ?? imgData?.data?.[0]?.b64_json;
-      if (url) {
-        setImageUrl(url.startsWith('http') ? url : `data:image/png;base64,${url}`);
-      }
+      // Step 2: Generate image with Pollinations.ai (free, no API key needed)
+      const encoded = encodeURIComponent(imgPrompt);
+      const seed = Math.floor(Math.random() * 999999);
+      const pollinationsUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${seed}`;
+      setImageUrl(pollinationsUrl);
       setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה ביצירת התמונה');
@@ -287,26 +259,8 @@ export function NewsletterAgent({ apiKey }: Props) {
               />
             </div>
 
-            <div className="form-group">
-              <label>
-                מפתח Together AI לתמונה{' '}
-                <a
-                  href="https://api.together.xyz"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="nl-link"
-                >
-                  (חינמי – api.together.xyz)
-                </a>
-              </label>
-              <input
-                type="password"
-                value={config.togetherApiKey}
-                onChange={(e) => saveConfig({ togetherApiKey: e.target.value })}
-                placeholder="ללא מפתח – תקבל רק prompt לתמונה"
-                disabled={step === 'generating'}
-                dir="ltr"
-              />
+            <div className="nl-image-note">
+              🖼️ תמונות נוצרות אוטומטית דרך Pollinations.ai — חינמי, ללא הגדרה
             </div>
           </div>
 

@@ -192,6 +192,13 @@
 }
 .nl-tip { font-size: 12px; color: var(--text-muted); margin: 0; }
 .nl-done-actions { display: flex; justify-content: flex-start; }
+.nl-image-note {
+  font-size: 13px;
+  color: var(--success);
+  background: var(--success-bg);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+}
 
 .nl-error {
   background: var(--danger-bg);
