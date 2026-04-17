@@ -1,121 +1,168 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useCallback } from 'react';
+import type { Course, View } from './types';
+import { store } from './store';
+import { Dashboard } from './components/Dashboard';
+import { CourseEditor } from './components/CourseEditor';
+import { LessonEditor } from './components/LessonEditor';
+import { AIAssistant } from './components/AIAssistant';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [view, setView] = useState<View>({ type: 'dashboard' });
+  const [courses, setCourses] = useState<Course[]>(() => store.getCourses());
+  const [showAI, setShowAI] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropic-api-key') ?? '');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showApiSetup, setShowApiSetup] = useState(false);
+
+  const refreshCourses = useCallback(() => {
+    setCourses(store.getCourses());
+  }, []);
+
+  function saveApiKey() {
+    localStorage.setItem('anthropic-api-key', apiKeyInput);
+    setApiKey(apiKeyInput);
+    setApiKeyInput('');
+    setShowApiSetup(false);
+    setShowAI(true);
+  }
+
+  function handleToggleAI() {
+    if (!apiKey) {
+      setShowApiSetup(true);
+    } else {
+      setShowAI((v) => !v);
+    }
+  }
+
+  function getCourseForView(): Course | undefined {
+    if (view.type === 'courseEditor' && view.courseId) {
+      return store.getCourse(view.courseId);
+    }
+    return undefined;
+  }
+
+  function getLessonForView() {
+    if (view.type !== 'lessonEditor') return undefined;
+    const course = store.getCourse(view.courseId);
+    if (!course || !view.lessonId) return undefined;
+    return course.lessons.find((l) => l.id === view.lessonId);
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-layout" dir="rtl">
+      <nav className="sidebar">
+        <div className="sidebar-logo">
+          <span className="logo-icon">🎓</span>
+          <span className="logo-text">האקדמיה</span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        <div className="sidebar-nav">
+          <button
+            className={`nav-item ${view.type === 'dashboard' ? 'active' : ''}`}
+            onClick={() => { setView({ type: 'dashboard' }); refreshCourses(); }}
+          >
+            <span className="nav-icon">🏠</span>
+            <span>לוח בקרה</span>
+          </button>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <button
+            className="nav-item"
+            onClick={() => setView({ type: 'courseEditor' })}
+          >
+            <span className="nav-icon">➕</span>
+            <span>קורס חדש</span>
+          </button>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <button
+            className={`nav-item ${showAI ? 'active' : ''}`}
+            onClick={handleToggleAI}
+          >
+            <span className="nav-icon">🤖</span>
+            <span>סוכן AI</span>
+          </button>
+        </div>
+
+        <div className="sidebar-footer">
+          <button className="nav-item-small" onClick={() => setShowApiSetup(true)}>
+            ⚙️ הגדרות API
+          </button>
+        </div>
+      </nav>
+
+      <main className="main-content">
+        {view.type === 'dashboard' && (
+          <Dashboard
+            courses={courses}
+            onNewCourse={() => setView({ type: 'courseEditor' })}
+            onEditCourse={(id) => setView({ type: 'courseEditor', courseId: id })}
+            onDeleteCourse={(id) => { store.deleteCourse(id); refreshCourses(); }}
+          />
+        )}
+
+        {view.type === 'courseEditor' && (
+          <CourseEditor
+            course={getCourseForView()}
+            onSave={(course) => {
+              refreshCourses();
+              setView({ type: 'courseEditor', courseId: course.id });
+            }}
+            onBack={() => { setView({ type: 'dashboard' }); refreshCourses(); }}
+            onEditLesson={(courseId, lessonId) =>
+              setView({ type: 'lessonEditor', courseId, lessonId })
+            }
+          />
+        )}
+
+        {view.type === 'lessonEditor' && (
+          <LessonEditor
+            courseId={view.courseId}
+            lesson={getLessonForView()}
+            onSave={() => {
+              refreshCourses();
+              setView({ type: 'courseEditor', courseId: view.courseId });
+            }}
+            onBack={() => setView({ type: 'courseEditor', courseId: view.courseId })}
+          />
+        )}
+      </main>
+
+      {showAI && apiKey && (
+        <aside className="ai-panel">
+          <div className="ai-panel-header">
+            <span>סוכן תוכן AI</span>
+            <button className="close-btn" onClick={() => setShowAI(false)}>✕</button>
+          </div>
+          <AIAssistant apiKey={apiKey} />
+        </aside>
+      )}
+
+      {showApiSetup && (
+        <div className="modal-overlay" onClick={() => setShowApiSetup(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>הגדרת מפתח Anthropic API</h3>
+            <p>הזן את מפתח ה-API שלך מ-console.anthropic.com</p>
+            <input
+              type="password"
+              placeholder="sk-ant-..."
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && saveApiKey()}
+            />
+            <p className="api-note">המפתח נשמר רק בדפדפן שלך (localStorage)</p>
+            <div className="modal-actions">
+              <button className="btn btn-primary" onClick={saveApiKey} disabled={!apiKeyInput.trim()}>
+                שמור ופתח סוכן AI
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowApiSetup(false)}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
