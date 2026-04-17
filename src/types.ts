@@ -33,7 +33,38 @@ export interface AIMessage {
 export type View =
   | { type: 'dashboard' }
   | { type: 'courseEditor'; courseId?: string }
-  | { type: 'lessonEditor'; courseId: string; lessonId?: string };
+  | { type: 'lessonEditor'; courseId: string; lessonId?: string }
+  | { type: 'newsletter' };
+
+export type NewsletterStep =
+  | 'config'
+  | 'generating'
+  | 'preview'
+  | 'email-sent'
+  | 'generating-image'
+  | 'done';
+
+export interface NewsletterConfig {
+  topic: string;
+  focus: string;
+  email: string;
+  togetherApiKey: string;
+}
+
+export const NEWSLETTER_TOPICS = [
+  'מנהיגות טרנספורמטיבית',
+  'ניהול ביצועים',
+  'אינטליגנציה רגשית במנהיגות',
+  'קבלת החלטות בלחץ',
+  'בניית תרבות ארגונית',
+  'ניהול שינוי',
+  'פיתוח צוות מנצח',
+  'תקשורת מנהיגותית',
+  'חדשנות וחשיבה יצירתית',
+  'ניהול עצמי ומיקוד',
+  'השפעה ללא סמכות',
+  'פסיכולוגיה של מוטיבציה',
+];
 
 export const LESSON_TYPE_LABELS: Record<LessonType, string> = {
   video: 'וידאו',

@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { CourseEditor } from './components/CourseEditor';
 import { LessonEditor } from './components/LessonEditor';
 import { AIAssistant } from './components/AIAssistant';
+import { NewsletterAgent } from './components/NewsletterAgent';
 import './App.css';
 
 function App() {
@@ -75,6 +76,14 @@ function App() {
           </button>
 
           <button
+            className={`nav-item ${view.type === 'newsletter' ? 'active' : ''}`}
+            onClick={() => setView({ type: 'newsletter' })}
+          >
+            <span className="nav-icon">📰</span>
+            <span>ניוזלטר AI</span>
+          </button>
+
+          <button
             className={`nav-item ${showAI ? 'active' : ''}`}
             onClick={handleToggleAI}
           >
@@ -112,6 +121,10 @@ function App() {
               setView({ type: 'lessonEditor', courseId, lessonId })
             }
           />
+        )}
+
+        {view.type === 'newsletter' && (
+          <NewsletterAgent apiKey={apiKey} />
         )}
 
         {view.type === 'lessonEditor' && (
