@@ -36,20 +36,6 @@ export type View =
   | { type: 'lessonEditor'; courseId: string; lessonId?: string }
   | { type: 'newsletter' };
 
-export type NewsletterStep =
-  | 'config'
-  | 'generating'
-  | 'preview'
-  | 'email-sent'
-  | 'generating-image'
-  | 'done';
-
-export interface NewsletterConfig {
-  topic: string;
-  focus: string;
-  email: string;
-}
-
 export const NEWSLETTER_TOPICS = [
   'מנהיגות טרנספורמטיבית',
   'ניהול ביצועים',
