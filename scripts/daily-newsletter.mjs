@@ -66,30 +66,36 @@ ${SOURCES.map((s, i) => `${i + 1}. ${s}`).join('\n')}
   return response.content[0].type === 'text' ? response.content[0].text.trim() : '';
 }
 
-async function generateImagePrompt(content, topic) {
+async function generateImagePrompt(content) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 200,
+    max_tokens: 250,
     messages: [{
       role: 'user',
-      content: `Create a powerful cinematic image prompt for a leadership newsletter.
-Topic: ${topic}
-Content summary: ${content.slice(0, 250)}
+      content: `You are a world-class creative director specializing in psychological visual metaphors.
 
-Requirements:
-- Cinematic, dramatic lighting (single light source, dark atmosphere)
-- Abstract metaphor for leadership transformation or human psychology
-- No text, no readable signs
-- Photorealistic style
-- Square 1:1 format suitable for social media
+Read this Hebrew leadership newsletter carefully and create ONE specific image that visually represents its CORE psychological insight — not a generic leadership image.
 
-Return ONLY the image prompt in English, 2-3 sentences.`,
+Newsletter:
+"""
+${content}
+"""
+
+Rules:
+- Extract the single most powerful psychological concept from the text (e.g. "the mask of confidence hiding fear", "the paradox of control creating chaos", etc.)
+- Translate that concept into a concrete visual metaphor
+- Dark, cinematic, dramatic single-light-source photography
+- No text, no readable signs, no faces (silhouettes allowed)
+- Photorealistic, square 1:1 format
+- DO NOT start with "Image Prompt" or any heading
+- Return ONLY the image description in English, 2-3 sentences, starting directly with the visual`,
     }],
   });
 
-  return response.content[0].type === 'text' ? response.content[0].text.trim() : 'A lone figure standing at the edge of a cliff at dawn, dramatic golden light cutting through storm clouds, cinematic depth of field, photorealistic.';
+  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+  return raw.replace(/^#+\s*[^\n]*\n+/, '') || 'A cracked mirror in a dark room, one side showing a confident upright silhouette and the other a crouching shadow, single harsh spotlight from above, photorealistic.';
 }
 
 async function generateImage(prompt) {
@@ -201,7 +207,7 @@ async function main() {
   console.log('✅ Newsletter generated, length:', content.length);
 
   console.log('🎨 Generating image prompt...');
-  const imagePrompt = await generateImagePrompt(content, topic);
+  const imagePrompt = await generateImagePrompt(content);
   console.log('Prompt:', imagePrompt);
 
   let imageUrl = null;

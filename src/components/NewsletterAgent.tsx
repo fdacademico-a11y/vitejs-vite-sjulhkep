@@ -82,21 +82,31 @@ ${SOURCES.map((s, i) => `${i + 1}. ${s}`).join('\n')}
     try {
       const promptRes = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
+        max_tokens: 250,
         messages: [{
           role: 'user',
-          content: `Create a powerful cinematic image prompt for a leadership newsletter.
-Topic: ${topic}
-Content: ${text.slice(0, 250)}
+          content: `You are a world-class creative director specializing in psychological visual metaphors.
 
-Requirements: cinematic dramatic lighting, dark background, single light source,
-abstract leadership metaphor, no text, no faces, photorealistic, square 1:1 format.
-Return ONLY the image prompt in English, 2-3 sentences.`,
+Read this Hebrew leadership newsletter carefully and create ONE specific image that visually represents its CORE psychological insight — not a generic leadership image.
+
+Newsletter:
+"""
+${text}
+"""
+
+Rules:
+- Extract the single most powerful psychological concept from the text (e.g. "the mask of confidence hiding fear", "the paradox of control creating chaos", etc.)
+- Translate that concept into a concrete visual metaphor
+- Dark, cinematic, dramatic single-light-source photography
+- No text, no readable signs, no faces (silhouettes allowed)
+- Photorealistic, square 1:1 format
+- DO NOT start with "Image Prompt" or any heading
+- Return ONLY the image description in English, 2-3 sentences, starting directly with the visual`,
         }],
       });
       const imgPrompt = promptRes.content[0].type === 'text'
-        ? promptRes.content[0].text.trim()
-        : 'A lone figure standing at the edge of a cliff at dawn, dramatic golden light cutting through dark storm clouds, cinematic depth of field, photorealistic.';
+        ? promptRes.content[0].text.trim().replace(/^#+\s*[^\n]*\n+/, '')
+        : 'A cracked mirror in a dark room, one side showing a confident upright silhouette and the other a crouching shadow, single harsh spotlight from above, photorealistic.';
 
       setImagePrompt(imgPrompt);
       const encoded = encodeURIComponent(imgPrompt);
