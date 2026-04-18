@@ -38,35 +38,38 @@ function getTodayTopic() {
 async function generateNewsletter(topic) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+  const today = new Date().toISOString().slice(0, 10);
+  const seed = Math.floor(Math.random() * 10000);
+
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     messages: [{
       role: 'user',
-      content: `אתה עורך ניוזלטר בינלאומי מוביל בתחום פיתוח מנהלים.
+      content: `אתה כותב תוכן לינקדאין מוביל בתחום מנהיגות וניהול.
 
-משימה: לכתוב ניוזלטר קצר (5-10 משפטים בלבד) שיהיה חזק פסיכולוגית, עם עומק, השפעה והוקים.
+כתוב פוסט לינקדאין על: ${topic}
+תאריך: ${today} | גרסה: ${seed}
 
-נושא: ${topic}
+מבנה חובה (4 חלקים ברצף, ללא כותרות):
+1. הוק (משפט אחד): עובדה מפתיעה, פרדוקס, או משפט שמנהל לא מצפה לו
+2. מחקר ונתון (2 משפטים): ממצא ספציפי ממקור אמיתי עם מספרים ושמות מתוך: ${SOURCES.slice(0, 5).join(', ')}
+3. הסבר (2 משפטים): למה זה קורה ומה זה אומר בפועל על הניהול
+4. שאלה פרובוקטיבית (משפט אחד): שאלה שמחלקת דעות ומעוררת תגובות
 
-סינתז את הידע שלך מהמקורות הבאים:
-${SOURCES.map((s, i) => `${i + 1}. ${s}`).join('\n')}
-
-חוקי הכתיבה:
-• פתח עם הוק מהלם – עובדה נגד-אינטואיטיבית, שאלה שמטרידה, או פרדוקס
-• צור dissonance קוגניטיבי – אתגר את מה שהמנהל חשב שהוא יודע
-• עומק פסיכולוגי – למה זה קורה ברמת הנפש
-• דוגמה קונקרטית מעולם אמיתי – מנהיג מוכר, מחקר ספציפי, נתון
-• סיים עם insight שמוליד פעולה מיידית או שאלת מראה אישית
-
-פורמט: בעברית מקצועית, 5-10 משפטים רצופים, ללא כותרות, ללא נקודות, ללא bullet points.`
+חוקים מחייבים:
+אסור להשתמש במקפים מכל סוג (לא - ולא --)
+אסור bullet points או נקודות
+אסור כותרות
+עברית ישירה וחזקה
+סך הכל 6 עד 8 משפטים בלבד`,
     }],
   });
 
   return response.content[0].type === 'text' ? response.content[0].text.trim() : '';
 }
 
-async function generateImagePrompt(content) {
+async function generateImagePrompt(topic, content) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const response = await client.messages.create({
@@ -74,31 +77,24 @@ async function generateImagePrompt(content) {
     max_tokens: 300,
     messages: [{
       role: 'user',
-      content: `You are a visual director creating a social media image for this Hebrew leadership newsletter.
+      content: `Create a photorealistic LinkedIn image prompt for a Hebrew leadership post.
 
-NEWSLETTER:
-"""
-${content}
-"""
+TOPIC: ${topic}
+KEY INSIGHT FROM POST: ${content.slice(0, 300)}
 
-TASK: Create a highly specific image prompt based on the newsletter's main message.
+STRICT RULES:
+- MUST be a business/corporate/office scene — NO nature, NO plants, NO animals, NO landscapes
+- Choose ONE of these contexts: boardroom table, executive desk, office hallway, glass-walled meeting room, presentation screen, hands on a keyboard, whiteboard with diagrams
+- The scene must visually represent the leadership insight
+- Format exactly: [specific business scene], [what it conveys about the leadership insight], [lighting], photorealistic, cinematic, square 1:1, no text, no visible faces.
 
-Step 1 - Identify the core tension or insight (one sentence):
-What is the SINGLE most important idea? (not leadership in general — the SPECIFIC idea in THIS text)
-
-Step 2 - Find a concrete real-world object or scene that embodies it:
-NOT abstract figures. Pick a SPECIFIC object: a broken clock, an empty chair at a table, a wilting plant next to a thriving one, two roads diverging, a puppet with cut strings, etc.
-
-Step 3 - Write the final image prompt following this format exactly:
-[Specific object/scene], [what it shows/does that connects to the newsletter's message], [lighting: dark room, single spotlight / golden hour / harsh fluorescent], photorealistic, cinematic, square 1:1, no text, no people.
-
-Return ONLY Step 3. No explanations. No headings. Start directly with the object.`,
+Return ONLY the image prompt. No explanations.`,
     }],
   });
 
   const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
   return raw.replace(/^#+\s*[^\n]*\n+/, '').trim() ||
-    'An empty executive chair casting a long shadow under a single spotlight, surrounded by darkness, the armrests worn from years of decisions, photorealistic, cinematic, square 1:1.';
+    'Empty boardroom table with a single chair pulled back, documents scattered and a whiteboard with erased diagrams still visible, harsh fluorescent lighting casting sharp shadows, photorealistic, cinematic, square 1:1, no text, no visible faces.';
 }
 
 async function generateImage(prompt) {
@@ -228,7 +224,7 @@ async function main() {
   console.log('✅ Newsletter generated, length:', content.length);
 
   console.log('🎨 Generating image prompt...');
-  const imagePrompt = await generateImagePrompt(content);
+  const imagePrompt = await generateImagePrompt(topic, content);
   console.log('Prompt:', imagePrompt);
 
   let imageUrl = null;
