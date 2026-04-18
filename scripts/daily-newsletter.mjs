@@ -70,32 +70,35 @@ async function generateImagePrompt(content) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 250,
+    model: 'claude-sonnet-4-6',
+    max_tokens: 300,
     messages: [{
       role: 'user',
-      content: `You are a world-class creative director specializing in psychological visual metaphors.
+      content: `You are a visual director creating a social media image for this Hebrew leadership newsletter.
 
-Read this Hebrew leadership newsletter carefully and create ONE specific image that visually represents its CORE psychological insight — not a generic leadership image.
-
-Newsletter:
+NEWSLETTER:
 """
 ${content}
 """
 
-Rules:
-- Extract the single most powerful psychological concept from the text (e.g. "the mask of confidence hiding fear", "the paradox of control creating chaos", etc.)
-- Translate that concept into a concrete visual metaphor
-- Dark, cinematic, dramatic single-light-source photography
-- No text, no readable signs, no faces (silhouettes allowed)
-- Photorealistic, square 1:1 format
-- DO NOT start with "Image Prompt" or any heading
-- Return ONLY the image description in English, 2-3 sentences, starting directly with the visual`,
+TASK: Create a highly specific image prompt based on the newsletter's main message.
+
+Step 1 - Identify the core tension or insight (one sentence):
+What is the SINGLE most important idea? (not leadership in general — the SPECIFIC idea in THIS text)
+
+Step 2 - Find a concrete real-world object or scene that embodies it:
+NOT abstract figures. Pick a SPECIFIC object: a broken clock, an empty chair at a table, a wilting plant next to a thriving one, two roads diverging, a puppet with cut strings, etc.
+
+Step 3 - Write the final image prompt following this format exactly:
+[Specific object/scene], [what it shows/does that connects to the newsletter's message], [lighting: dark room, single spotlight / golden hour / harsh fluorescent], photorealistic, cinematic, square 1:1, no text, no people.
+
+Return ONLY Step 3. No explanations. No headings. Start directly with the object.`,
     }],
   });
 
   const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
-  return raw.replace(/^#+\s*[^\n]*\n+/, '') || 'A cracked mirror in a dark room, one side showing a confident upright silhouette and the other a crouching shadow, single harsh spotlight from above, photorealistic.';
+  return raw.replace(/^#+\s*[^\n]*\n+/, '').trim() ||
+    'An empty executive chair casting a long shadow under a single spotlight, surrounded by darkness, the armrests worn from years of decisions, photorealistic, cinematic, square 1:1.';
 }
 
 async function generateImage(prompt) {
