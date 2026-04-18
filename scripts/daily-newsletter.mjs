@@ -168,7 +168,8 @@ ${hashtags}</p>
     }
   }
 
-  await resend.emails.send({
+  console.log('📤 Calling Resend API...');
+  const result = await resend.emails.send({
     from: 'onboarding@resend.dev',
     to: process.env.RECIPIENT_EMAIL,
     subject: `📰 ${topic} – ${today}`,
@@ -176,15 +177,28 @@ ${hashtags}</p>
     attachments,
   });
 
-  console.log('✅ Email sent to', process.env.RECIPIENT_EMAIL);
+  console.log('📨 Resend response:', JSON.stringify(result));
+  if (result.error) throw new Error(`Resend error: ${JSON.stringify(result.error)}`);
+  console.log('✅ Email sent, id:', result.data?.id);
 }
 
 async function main() {
+  // Validate required env vars upfront
+  const missing = ['ANTHROPIC_API_KEY', 'RESEND_API_KEY', 'RECIPIENT_EMAIL']
+    .filter(k => !process.env[k]);
+  if (missing.length) {
+    throw new Error(`Missing required secrets: ${missing.join(', ')}`);
+  }
+
+  console.log('🔑 RESEND_API_KEY present:', process.env.RESEND_API_KEY.slice(0, 8) + '...');
+  console.log('📬 RECIPIENT_EMAIL:', process.env.RECIPIENT_EMAIL);
+
   const topic = getTodayTopic();
   console.log(`📌 Topic: ${topic}`);
 
   console.log('✍️  Generating newsletter...');
   const content = await generateNewsletter(topic);
+  console.log('✅ Newsletter generated, length:', content.length);
 
   console.log('🎨 Generating image prompt...');
   const imagePrompt = await generateImagePrompt(content, topic);
