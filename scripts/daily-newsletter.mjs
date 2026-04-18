@@ -113,6 +113,89 @@ async function generateImage(prompt) {
   return url;
 }
 
+async function uploadImageToLinkedIn(imageUrl, accessToken, orgId) {
+  // Step 1: Initialize upload
+  const initRes = await fetch('https://api.linkedin.com/rest/images?action=initializeUpload', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'LinkedIn-Version': '202401',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify({
+      initializeUploadRequest: { owner: `urn:li:organization:${orgId}` },
+    }),
+  });
+
+  if (!initRes.ok) throw new Error(`LinkedIn init upload: ${await initRes.text()}`);
+  const { value } = await initRes.json();
+
+  // Step 2: Upload image binary
+  const imgBuf = await (await fetch(imageUrl)).arrayBuffer();
+  const uploadRes = await fetch(value.uploadUrl, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'image/jpeg' },
+    body: imgBuf,
+  });
+  if (!uploadRes.ok) throw new Error(`LinkedIn image upload: ${uploadRes.status}`);
+
+  return value.image; // urn:li:image:...
+}
+
+async function postToLinkedIn(text, imageUrl) {
+  const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+  const orgId = process.env.LINKEDIN_ORGANIZATION_ID;
+
+  if (!accessToken || !orgId) {
+    console.log('⏭️  LinkedIn secrets not configured — skipping');
+    return;
+  }
+
+  // Upload image if available
+  let imageUrn = null;
+  if (imageUrl) {
+    try {
+      imageUrn = await uploadImageToLinkedIn(imageUrl, accessToken, orgId);
+      console.log('✅ Image uploaded to LinkedIn:', imageUrn);
+    } catch (e) {
+      console.warn('⚠️  LinkedIn image upload failed:', e.message);
+    }
+  }
+
+  // Build post body
+  const postBody = {
+    author: `urn:li:organization:${orgId}`,
+    commentary: text,
+    visibility: 'PUBLIC',
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    lifecycleState: 'PUBLISHED',
+    isReshareDisabledByAuthor: false,
+  };
+
+  if (imageUrn) {
+    postBody.content = { media: { id: imageUrn } };
+  }
+
+  const res = await fetch('https://api.linkedin.com/rest/posts', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'LinkedIn-Version': '202401',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(postBody),
+  });
+
+  if (!res.ok) throw new Error(`LinkedIn post failed: ${await res.text()}`);
+  console.log('✅ Posted to LinkedIn successfully');
+}
+
 async function fetchImageBase64(url) {
   const res = await fetch(url);
   const buf = await res.arrayBuffer();
@@ -224,6 +307,13 @@ async function main() {
 
   console.log('📧 Sending email...');
   await sendEmail(topic, content, imageUrl);
+
+  console.log('📤 Posting to LinkedIn...');
+  try {
+    await postToLinkedIn(content, imageUrl);
+  } catch (e) {
+    console.warn('⚠️  LinkedIn post failed:', e.message);
+  }
 
   console.log('🎉 Done!');
 }
