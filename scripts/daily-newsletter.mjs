@@ -133,7 +133,7 @@ async function fetchImageBase64(url) {
   return Buffer.from(buf).toString('base64');
 }
 
-async function sendEmail(topic, content, imageUrl) {
+async function sendEmail(topic, content, imageUrl, recipients) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const today = new Date().toLocaleDateString('he-IL', {
@@ -194,7 +194,7 @@ ${hashtags}</p>
   console.log('📤 Calling Resend API...');
   const result = await resend.emails.send({
     from: 'onboarding@resend.dev',
-    to: process.env.RECIPIENT_EMAIL,
+    to: recipients,
     subject: `📰 ${topic} – ${today}`,
     html,
     attachments,
@@ -207,14 +207,15 @@ ${hashtags}</p>
 
 async function main() {
   // Validate required env vars upfront
-  const missing = ['ANTHROPIC_API_KEY', 'RESEND_API_KEY', 'RECIPIENT_EMAIL']
+  const missing = ['ANTHROPIC_API_KEY', 'RESEND_API_KEY', 'RECIPIENT_EMAILS']
     .filter(k => !process.env[k]);
   if (missing.length) {
     throw new Error(`Missing required secrets: ${missing.join(', ')}`);
   }
 
+  const recipients = process.env.RECIPIENT_EMAILS.split(',').map(e => e.trim()).filter(Boolean);
   console.log('🔑 RESEND_API_KEY present:', process.env.RESEND_API_KEY.slice(0, 8) + '...');
-  console.log('📬 RECIPIENT_EMAIL:', process.env.RECIPIENT_EMAIL);
+  console.log('📬 Recipients:', recipients);
 
   const topic = getTodayTopic();
   console.log(`📌 Topic: ${topic}`);
@@ -237,7 +238,7 @@ async function main() {
   }
 
   console.log('📧 Sending email...');
-  await sendEmail(topic, content, imageUrl);
+  await sendEmail(topic, content, imageUrl, recipients);
 
   console.log('📤 Posting to LinkedIn...');
   try {
