@@ -167,11 +167,8 @@ async function sendEmail(topic, content, imageUrl, recipients) {
 
     ${imageUrl ? `<div style="margin-bottom:20px;"><img src="${imageUrl}" alt="תמונה לפוסט" style="width:100%;border-radius:14px;display:block;box-shadow:0 8px 32px rgba(0,0,0,0.4);" /></div>` : ''}
 
-    <div style="background:#12101f;border:1.5px dashed #4c1d95;border-radius:14px;padding:22px;margin-bottom:20px;">
-      <div style="font-size:11px;color:#6b7280;margin-bottom:14px;text-align:center;text-transform:uppercase;letter-spacing:1px;">📋 העתק לפייסבוק / לינקדאין</div>
-      <p style="color:#e9d5ff;font-size:15px;line-height:1.85;margin:0;white-space:pre-wrap;">${content}
-
-${hashtags}</p>
+    <div style="background:#12101f;border:1.5px dashed #4c1d95;border-radius:14px;padding:16px 22px;margin-bottom:20px;text-align:center;">
+      <div style="font-size:12px;color:#a78bfa;letter-spacing:0.5px;">${hashtags}</div>
     </div>
 
     <div style="text-align:center;font-size:11px;color:#374151;padding-top:8px;border-top:1px solid #1f2937;">
